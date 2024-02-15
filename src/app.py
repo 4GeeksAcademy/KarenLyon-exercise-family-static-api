@@ -24,19 +24,52 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
-
+    
 @app.route('/members', methods=['GET'])
-def handle_hello():
+def handle_members():
 
     # this is how you can use the Family datastructure by calling its methods
     members = jackson_family.get_all_members()
-    response_body = {
-        "hello": "world",
-        "family": members
-    }
-
-
+    response_body = members
     return jsonify(response_body), 200
+
+@app.route('/member/<int:member_id>', methods=['GET'])
+def handle_member(member_id):
+   member = jackson_family.get_member(member_id)
+   if member:
+      return jsonify(member),200
+   else:
+      return jsonify({"err_msg":"member not found"}), 404
+
+# ruta de post
+@app.route('/member', methods=['POST'])
+def add_member():
+    member_data = request.get_json()
+    required_fields = ['first_name', 'age', 'lucky_numbers']
+    for field in required_fields:
+        if field not in member_data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    # Agregar el miembro a la lista de miembros
+    jackson_family.add_member(member_data)
+
+    return 'ok', 200
+        
+@app.route('/member/<int:member_id>', methods=['PUT'])
+def update_member(member_id):
+    member_data = request.get_json()
+    success = jackson_family.update_member(member_id, member_data)
+    if success:
+        return 'Member updated successfully', 200
+    else:
+        return 'Member not found', 404
+
+
+@app.route('/member/<int:member_id>', methods=['DELETE'])
+def delete_member(member_id):
+    jackson_family.delete_member(member_id)
+    return 'ok', 200
+
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
